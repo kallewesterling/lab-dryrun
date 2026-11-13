@@ -137,7 +137,7 @@ class BookStore:
         if author is not None:
             books = [b for b in books if b.author.lower() == author.lower()]
         if tag is not None:
-            books = [b for b in books if tag.lower() in b.tags]
+            books = [b for b in books if tag in b.tags]
         if query is not None:
             needle = query.lower()
             books = [b for b in books if needle in b.title.lower() or needle in b.author.lower()]
