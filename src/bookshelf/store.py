@@ -143,5 +143,5 @@ class BookStore:
             needle = query.lower()
             books = [b for b in books if needle in b.title.lower() or needle in b.author.lower()]
         if year_from is not None:
-            books = [b for b in books if b.year > year_from]
+            books = [b for b in books if b.year >= year_from]
         return books[offset : offset + limit]
