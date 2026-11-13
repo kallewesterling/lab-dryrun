@@ -30,6 +30,12 @@ def _int_arg(name: str, default: int) -> int:
         raise ValueError(f"{name} must be an integer") from None
 
 
+def _optional_int_arg(name: str) -> int | None:
+    if request.args.get(name) is None:
+        return None
+    return _int_arg(name, 0)
+
+
 def create_app(store: BookStore | None = None) -> Flask:
     app = Flask(__name__)
     shelf = store if store is not None else BookStore()
@@ -45,7 +51,7 @@ def create_app(store: BookStore | None = None) -> Flask:
                 author=request.args.get("author"),
                 tag=request.args.get("tag"),
                 query=request.args.get("q"),
-                year_from=request.args.get("year_from"),
+                year_from=_optional_int_arg("year_from"),
                 limit=_int_arg("limit", 20),
                 offset=_int_arg("offset", 0),
             )
