@@ -1,0 +1,30 @@
+# Presenter-only demo: the same egress check, but with `policy: destroy`.
+#
+# With the default policy (deny), a connection to an unlisted host is refused
+# and the check keeps running. With `policy: destroy`, the VM is stopped as
+# soon as the check tries an unlisted host, and the check fails. The run page
+# names the host it tried to reach.
+#
+# To show it: on a separate branch, copy this file over .chainguard/ci.yaml,
+# push, and open a pull request.
+version: 1
+
+environment:
+  packages: [python-3.13]
+
+checks:
+  egress-demo:
+    description: Tries to reach a host it hasn't listed; the VM is destroyed
+    timeout: 5m
+    script: |
+      python3 - <<'PY'
+      import urllib.request
+
+      print("Trying to reach example.com, which isn't on the egress list...")
+      urllib.request.urlopen("https://example.com", timeout=10)
+      print("Unexpected: example.com was reachable from this check")
+      PY
+    network:
+      egress:
+        - pypi.org # the only host this check may reach
+      policy: destroy
