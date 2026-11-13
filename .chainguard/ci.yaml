@@ -1,114 +1,30 @@
-# Chainguard Checks configuration for the Learning Lab.
+# Presenter-only demo: the same egress check, but with `policy: destroy`.
 #
-# Copy this file to .chainguard/ci.yaml on a new branch, validate it with
-# `chainctl checks validate .`, and open a pull request. Each check below runs
-# in its own fresh microVM. A check can only reach the hosts listed under
-# network.egress; every other connection is refused.
+# With the default policy (deny), a connection to an unlisted host is refused
+# and the check keeps running. With `policy: destroy`, the VM is stopped as
+# soon as the check tries an unlisted host, and the check fails. The run page
+# names the host it tried to reach.
+#
+# To show it: on a separate branch, copy this file over .chainguard/ci.yaml,
+# push, and open a pull request.
 version: 1
 
 environment:
-  # The VM starts from a minimal base. List everything the checks need.
-  packages: [python-3.13, py3.13-pip]
+  packages: [python-3.13]
 
 checks:
-  lint:
-    description: Lint and format check (ruff)
-    timeout: 15m
-    script: |
-      # /tmp is memory-backed in the VM, so the virtualenv goes in /var/tmp.
-      python3 -m venv /var/tmp/venv
-      . /var/tmp/venv/bin/activate
-      pip install --quiet -e ".[dev]"
-      ruff check .
-      ruff format --check .
-    network:
-      egress:
-        - pypi.org # package index
-        - files.pythonhosted.org # package downloads
-
-  typecheck:
-    description: Type check (mypy --strict)
-    timeout: 15m
-    script: |
-      python3 -m venv /var/tmp/venv
-      . /var/tmp/venv/bin/activate
-      pip install --quiet -e ".[dev]"
-      mypy
-    network:
-      egress:
-        - pypi.org # package index
-        - files.pythonhosted.org # package downloads
-
-  test:
-    description: Unit and integration tests, with coverage
-    timeout: 15m
-    script: |
-      python3 -m venv /var/tmp/venv
-      . /var/tmp/venv/bin/activate
-      pip install --quiet -e ".[dev]"
-      pytest --cov=bookshelf --cov-report=term-missing -m "not property"
-    network:
-      egress:
-        - pypi.org # package index
-        - files.pythonhosted.org # package downloads
-
-  property-tests:
-    description: Property-based tests (Hypothesis, thorough)
-    timeout: 15m
-    vars:
-      HYPOTHESIS_PROFILE: ci
-    script: |
-      python3 -m venv /var/tmp/venv
-      . /var/tmp/venv/bin/activate
-      pip install --quiet -e ".[dev]"
-      pytest -m property
-    network:
-      egress:
-        - pypi.org # package index
-        - files.pythonhosted.org # package downloads
-
-  audit:
-    description: Dependency audit (pip-audit)
-    timeout: 15m
-    script: |
-      python3 -m venv /var/tmp/venv
-      . /var/tmp/venv/bin/activate
-      pip install --quiet -e ".[dev]"
-      pip-audit --skip-editable
-    network:
-      egress:
-        - pypi.org # package index, and pip-audit's vulnerability data
-        - files.pythonhosted.org # package downloads
-
-  build:
-    description: Build the wheel and smoke-test it in a clean virtualenv
-    timeout: 15m
-    script: |
-      python3 -m venv /var/tmp/venv
-      . /var/tmp/venv/bin/activate
-      pip install --quiet build
-      python -m build
-      python3 -m venv /var/tmp/smoke
-      /var/tmp/smoke/bin/pip install --quiet dist/*.whl
-      /var/tmp/smoke/bin/python scripts/smoke_test.py
-    network:
-      egress:
-        - pypi.org # package index
-        - files.pythonhosted.org # package downloads
-
   egress-demo:
-    description: Tries to reach a host it hasn't listed, to show the connection being refused
+    description: Tries to reach a host it hasn't listed; the VM is destroyed
     timeout: 5m
-    # No network section: this check has no network access at all. It sends
-    # no data; it only tries to open a connection to example.com.
     script: |
       python3 - <<'PY'
       import urllib.request
 
-      try:
-          urllib.request.urlopen("https://example.com", timeout=10)
-      except Exception as exc:
-          print(f"Connection to example.com was refused, as expected: {exc}")
-      else:
-          raise SystemExit("Unexpected: example.com was reachable from this check")
+      print("Trying to reach example.com, which isn't on the egress list...")
+      urllib.request.urlopen("https://example.com", timeout=10)
+      print("Unexpected: example.com was reachable from this check")
       PY
+    network:
+      egress:
+        - pypi.org # the only host this check may reach
+      policy: destroy
