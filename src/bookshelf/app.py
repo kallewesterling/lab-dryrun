@@ -45,6 +45,7 @@ def create_app(store: BookStore | None = None) -> Flask:
                 author=request.args.get("author"),
                 tag=request.args.get("tag"),
                 query=request.args.get("q"),
+                year_from=request.args.get("year_from"),
                 limit=_int_arg("limit", 20),
                 offset=_int_arg("offset", 0),
             )

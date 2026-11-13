@@ -29,6 +29,7 @@ def test_list_books(client: FlaskClient) -> None:
         ("?tag=cyberpunk", ["Neuromancer"]),
         ("?q=wizard", ["A Wizard of Earthsea"]),
         ("?limit=2", ["Dune", "A Wizard of Earthsea"]),
+        ("?year_from=1968", ["A Wizard of Earthsea", "Neuromancer"]),
     ],
 )
 def test_list_books_filters(client: FlaskClient, query: str, titles: list[str]) -> None:

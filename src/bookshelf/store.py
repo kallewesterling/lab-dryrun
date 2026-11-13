@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import itertools
+import os
 import threading
 from dataclasses import asdict, dataclass, field, replace
 from typing import Any
@@ -126,6 +127,7 @@ class BookStore:
         author: str | None = None,
         tag: str | None = None,
         query: str | None = None,
+        year_from: int | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> list[Book]:
@@ -141,4 +143,6 @@ class BookStore:
         if query is not None:
             needle = query.lower()
             books = [b for b in books if needle in b.title.lower() or needle in b.author.lower()]
+        if year_from is not None:
+            books = [b for b in books if b.year > year_from]
         return books[offset : offset + limit]
